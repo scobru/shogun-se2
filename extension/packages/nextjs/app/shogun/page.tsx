@@ -5,21 +5,90 @@ import type { NextPage } from "next";
 import { useAccount } from "wagmi";
 import { BugAntIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 import { Address } from "~~/components/scaffold-eth";
+import { ShogunButton, ShogunButtonProvider } from "shogun-button-react";
+import { ShogunCore } from "shogun-core";
+import { useEffect, useState } from "react";
 
 const Home: NextPage = () => {
   const { address: connectedAddress } = useAccount();
+  const [mounted, setMounted] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userAddress, setUserAddress] = useState<string | null>(null);
+  
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+  
+  // Initialize Shogun SDK
+  const sdk = new ShogunCore({
+    gundb: {
+      peers: ["https://gun-relay.scobrudot.dev/gun"]
+    },
+    metamask: {
+      enabled: true
+    },
+    webauthn: {
+      enabled: true
+    },
+    peers: ["https://gun-relay.scobrudot.dev/gun"]
+  });
+
+  if (!mounted) {
+    return null;
+  }
 
   return (
-    <>
+    <ShogunButtonProvider 
+      sdk={sdk}
+      options={{
+        appName: "Shogun Wallet App",
+        appDescription: "A secure wallet application",
+        appUrl: typeof window !== 'undefined' ? window.location.origin : '',
+        darkMode: document.documentElement.getAttribute('data-theme') === 'dark',
+        showMetamask: true,
+        showWebauthn: true
+      }}
+      onLoginSuccess={(data) => {
+        console.log("Login successful:", data);
+        setIsLoggedIn(true);
+        // Se il login è avvenuto con MetaMask, usa l'indirizzo dell'account
+        if (data.authMethod === 'metamask_direct' || data.authMethod === 'metamask_saved') {
+          setUserAddress(data.username);
+        } else {
+          setUserAddress(data.userPub);
+        }
+      }}
+      onSignupSuccess={(data) => {
+        console.log("Signup successful:", data);
+        setIsLoggedIn(true);
+        // Se la registrazione è avvenuta con MetaMask, usa l'indirizzo dell'account
+        if (data.authMethod === 'metamask_signup') {
+          setUserAddress(data.username);
+        } else {
+          setUserAddress(data.userPub);
+        }
+      }}
+      onError={(error) => {
+        console.error("Shogun error:", error);
+        setIsLoggedIn(false);
+        setUserAddress(null);
+      }}
+    >
       <div className="flex items-center flex-col flex-grow pt-10">
         <div className="px-5">
           <h1 className="text-center">
             <span className="block text-2xl mb-2">Welcome to</span>
             <span className="block text-4xl font-bold">Scaffold-ETH 2</span>
           </h1>
+          
+          {/* Add Shogun Button */}
+          <div className="flex justify-center items-center space-y-4 mb-8">
+            <ShogunButton />
+          </div>
+
           <div className="flex justify-center items-center space-x-2 flex-col">
             <p className="my-2 font-medium">Connected Address:</p>
-            <Address address={connectedAddress} />
+            <Address address={isLoggedIn ? userAddress : connectedAddress} />
           </div>
 
           <p className="text-center text-lg">
@@ -65,7 +134,7 @@ const Home: NextPage = () => {
           </div>
         </div>
       </div>
-    </>
+    </ShogunButtonProvider>
   );
 };
 
