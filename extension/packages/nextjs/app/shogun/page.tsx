@@ -1,36 +1,36 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import type { NextPage } from "next";
+import { ShogunButton, ShogunButtonProvider } from "shogun-button-react";
+import { ShogunCore } from "shogun-core";
 import { useAccount } from "wagmi";
 import { BugAntIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 import { Address } from "~~/components/scaffold-eth";
-import { ShogunButton, ShogunButtonProvider } from "shogun-button-react";
-import { ShogunCore } from "shogun-core";
-import { useEffect, useState } from "react";
 
 const Home: NextPage = () => {
   const { address: connectedAddress } = useAccount();
   const [mounted, setMounted] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userAddress, setUserAddress] = useState<string | null>(null);
-  
+
   useEffect(() => {
     setMounted(true);
   }, []);
-  
+
   // Initialize Shogun SDK
   const sdk = new ShogunCore({
     gundb: {
-      peers: ["https://gun-relay.scobrudot.dev/gun"]
+      peers: ["https://gun-relay.scobrudot.dev/gun"],
     },
     metamask: {
-      enabled: true
+      enabled: true,
     },
     webauthn: {
-      enabled: true
+      enabled: true,
     },
-    peers: ["https://gun-relay.scobrudot.dev/gun"]
+    peers: ["https://gun-relay.scobrudot.dev/gun"],
   });
 
   if (!mounted) {
@@ -38,37 +38,37 @@ const Home: NextPage = () => {
   }
 
   return (
-    <ShogunButtonProvider 
+    <ShogunButtonProvider
       sdk={sdk}
       options={{
         appName: "Shogun Wallet App",
         appDescription: "A secure wallet application",
-        appUrl: typeof window !== 'undefined' ? window.location.origin : '',
-        darkMode: document.documentElement.getAttribute('data-theme') === 'dark',
+        appUrl: typeof window !== "undefined" ? window.location.origin : "",
+        darkMode: document.documentElement.getAttribute("data-theme") === "dark",
         showMetamask: true,
-        showWebauthn: true
+        showWebauthn: true,
       }}
-      onLoginSuccess={(data) => {
+      onLoginSuccess={data => {
         console.log("Login successful:", data);
         setIsLoggedIn(true);
         // Se il login è avvenuto con MetaMask, usa l'indirizzo dell'account
-        if (data.authMethod === 'metamask_direct' || data.authMethod === 'metamask_saved') {
+        if (data.authMethod === "metamask_direct" || data.authMethod === "metamask_saved") {
           setUserAddress(data.username);
         } else {
           setUserAddress(data.userPub);
         }
       }}
-      onSignupSuccess={(data) => {
+      onSignupSuccess={data => {
         console.log("Signup successful:", data);
         setIsLoggedIn(true);
         // Se la registrazione è avvenuta con MetaMask, usa l'indirizzo dell'account
-        if (data.authMethod === 'metamask_signup') {
+        if (data.authMethod === "metamask_signup") {
           setUserAddress(data.username);
         } else {
           setUserAddress(data.userPub);
         }
       }}
-      onError={(error) => {
+      onError={error => {
         console.error("Shogun error:", error);
         setIsLoggedIn(false);
         setUserAddress(null);
@@ -80,7 +80,7 @@ const Home: NextPage = () => {
             <span className="block text-2xl mb-2">Welcome to</span>
             <span className="block text-4xl font-bold">Scaffold-ETH 2</span>
           </h1>
-          
+
           {/* Add Shogun Button */}
           <div className="flex justify-center items-center space-y-4 mb-8">
             <ShogunButton />
